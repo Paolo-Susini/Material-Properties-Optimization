@@ -1,100 +1,153 @@
-Dynamic FEM Material Parameter Identification with CasADi
+### 📄 **`README.md`**
+
+# 🧠 Dynamic FEM Material Parameter Identification with CasADi
 
 <p align="center">
-<img alt="Python" src="https://www.google.com/search?q=https://img.shields.io/badge/Python-3.9%252B-blue%3Flogo%3Dpython%26logoColor%3Dwhite">
-<img alt="CasADi" src="https://www.google.com/search?q=https://img.shields.io/badge/CasADi-yellow%3Flogo%3Dcasadi%26logoColor%3Dblack">
-<img alt="IPOPT" src="https://www.google.com/search?q=https://img.shields.io/badge/IPOPT-brightgreen%3Flogo%3Dipopt%26logoColor%3Dblack">
-<img alt="NumPy" src="https://www.google.com/search?q=https://img.shields.io/badge/NumPy-white%3Flogo%3Dnumpy%26logoColor%3Dblue">
-<img alt="Matplotlib" src="https://www.google.com/search?q=https://img.shields.io/badge/Matplotlib-grey%3Flogo%3Dmatplotlib%26logoColor%3Dwhite">
+  <img src="https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white" alt="Python Badge">
+  <img src="https://img.shields.io/badge/CasADi-yellow?logo=casadi&logoColor=black" alt="CasADi Badge">
+  <img src="https://img.shields.io/badge/IPOPT-brightgreen?logo=ipopt&logoColor=black" alt="IPOPT Badge">
+  <img src="https://img.shields.io/badge/NumPy-white?logo=numpy&logoColor=blue" alt="NumPy Badge">
+  <img src="https://img.shields.io/badge/Matplotlib-grey?logo=matplotlib&logoColor=white" alt="Matplotlib Badge">
 </p>
 
-This project performs dynamic parameter identification for a 3D deformable object. It uses CasADi to build a complete, non-linear Finite Element (FEM) simulation symbolically, then uses gradient-based optimization to find the material properties (Young's Modulus $E$ and Poisson's Ratio $\nu$) that best match a target motion.
+---
 
-This is an inverse problem where we find the causes (material properties) from the effects (motion).
+### 🧩 Overview
 
-🎥 Demo
+This project performs **dynamic material parameter identification** for a 3D deformable object using **CasADi**.  
+It constructs a **non-linear Finite Element Method (FEM)** simulation symbolically, then applies **gradient-based optimization** to identify material properties — **Young’s Modulus** ($E$) and **Poisson’s Ratio** ($\nu$) — that best match a target motion.
 
-Pro-Tip: The visualization script plots_optimization.py shows a Matplotlib animation. To create a GIF like the one below, add ani.save('animation.gif', writer='pillow') (you may need pip install pillow) before plt.show().
+> 🧮 In essence: this is an **inverse problem**, identifying the causes (material properties) from observed effects (motion).
 
-🎯 Core Concepts
+---
 
-This repository demonstrates a powerful combination of techniques:
+### 🎥 Demo
 
-Non-Linear FEM: The simulation is not linear. It uses an "updated-Lagrangian" approach where the element stiffness ($K_e$) is recomputed at every timestep based on the current, deformed node positions.
+You can visualize the optimization with `plots_optimization.py`.  
+To export an animation as a GIF, simply add this before `plt.show()`:
 
-Parameter Identification: It solves an inverse problem to identify unknown parameters ($E$, $\nu$) from observed data.
+```python
+ani.save("animation.gif", writer="pillow")
+````
 
-CasADi Symbolic Graph: The entire time-stepping simulation is built as a massive symbolic expression in CasADi. The final objective function J (total error) is a single symbolic graph that depends only on the initial guesses for $E$ and $\nu$.
+> If needed, install Pillow:
+>
+> ```bash
+> pip install pillow
+> ```
+<p align="center">
+  <img src="cube_animation.gif" alt="Dynamic FEM Cube Animation" width="500"/>
+</p>
+---
 
-Automatic Differentiation (AD): By building the simulation symbolically, we get the gradient of the total error with respect to the material properties for "free" using CasADi's reverse-mode AD (the "adjoint method").
+### 🎯 Core Concepts
 
-Gradient-Based Optimization: The high-performance solver IPOPT is used to solve this non-linear program (NLP), finding the optimal $E$ and $\nu$ that minimize the error.
+| Concept                            | Description                                                                                           |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Non-Linear FEM**                 | Uses an *updated-Lagrangian* approach, recomputing element stiffness matrices $K_e$ at each timestep. |
+| **Parameter Identification**       | Solves an inverse problem to identify $(E, \nu)$ from observed motion data.                           |
+| **CasADi Symbolic Graph**          | Builds the entire simulation as a single symbolic expression $J(E,\nu)$.                              |
+| **Automatic Differentiation (AD)** | CasADi provides efficient gradients via reverse-mode AD (“adjoint method”).                           |
+| **Gradient-Based Optimization**    | The non-linear program is solved by **IPOPT** to find optimal material parameters.                    |
 
-🚀 The Pipeline
+---
 
-The main script optimize_material_time_series.py executes a full, end-to-end pipeline:
+### 🚀 Pipeline Overview
 
-Generate Ground Truth: A numerical (NumPy) simulation is run with known "true" properties ($E_{true}$, $\nu_{true}$). The resulting displacement history is saved as u_target_series.npy.
+The main script `optimize_material_time_series.py` executes the full workflow:
 
-Build Symbolic Model: A second, identical simulation is built using CasADi's symbolic variables (ca.SX). The material properties $E$ and $\nu$ are left as free symbolic variables.
+1. **Generate Ground Truth**
+   Runs a numerical FEM simulation with known $(E_{true}, \nu_{true})$, saving `u_target_series.npy`.
 
-Define Objective Function: The script defines a cost function J as the sum of squared differences between the symbolic simulation's output and the "ground truth" data at each timestep.
+2. **Build Symbolic Model**
+   Recreates the same simulation in CasADi (`ca.SX`), leaving $E$, $\nu$ as symbolic variables.
 
-Optimize: CasADi and IPOPT work together to solve the optimization problem minimize J(E, nu). This step finds the optimal $E_{opt}$ and $\nu_{opt}$ that make the simulation best match the target.
+3. **Define Objective Function**
+   Builds cost function
+   $$
+   J = \sum_t ||u_{\text{sim}}(t) - u_{\text{target}}(t)||^2
+   $$
 
-Generate Optimized Trajectory: A final numerical (NumPy) simulation is run using the found $E_{opt}$ and $\nu_{opt}$. Its history is saved as u_series_opt.npy.
+4. **Optimize**
+   Solves `minimize J(E, ν)` using CasADi + IPOPT to find $(E_{opt}, \nu_{opt})$.
 
-Visualize: The script saves all necessary .npy files and automatically calls Paolo_Sofa/Paolo_codes/plots_optimization.py to launch the final visualization and analysis.
+5. **Generate Optimized Trajectory**
+   Runs a final simulation using $(E_{opt}, \nu_{opt})$ and saves `u_series_opt.npy`.
 
-⚙️ Requirements
+6. **Visualize Results**
+   Calls `plots_optimization.py` to display and compare the results interactively.
 
-The project requires the following Python libraries. You can install them using pip:
+---
 
+### ⚙️ Requirements
+
+Install dependencies:
+
+```bash
 pip install numpy casadi matplotlib scipy
+```
 
+| Library        | Purpose                                                       |
+| -------------- | ------------------------------------------------------------- |
+| **numpy**      | Numerical computations                                        |
+| **casadi**     | Symbolic modeling, automatic differentiation, IPOPT interface |
+| **matplotlib** | Visualization and animations                                  |
+| **scipy**      | Optional numerical utilities                                  |
 
-numpy for all numerical computation.
+---
 
-casadi for the symbolic framework, AD, and IPOPT interface.
+### 📈 How to Run
 
-matplotlib for all plotting and animation.
+Simply run:
 
-scipy (while not used in this specific script, it's a standard part of this ecosystem).
-
-📈 How to Run
-
-No special setup is required. Just run the main optimization script:
-
+```bash
 python optimize_material_time_series.py
+```
 
+This command will:
 
-This single command will:
+* ✅ Generate the ground truth dataset
+* 🔍 Run full parameter optimization
+* 🧾 Print true vs. identified parameters
+* 💾 Save all `.npy` and `.txt` results
+* 🎨 Launch the visualizer
 
-Generate the ground truth data.
+**The visualizer displays:**
 
-Run the full optimization (this may take a few minutes).
+* Side-by-side 3D animation (Ground Truth vs. Optimized)
+* Position error per node over time
+* Final error bar chart
+* 3D scatter of error distribution on the object
 
-Print the true vs. found parameters.
+---
 
-Save all data files (.npy and .txt).
+### 📁 Project Structure
 
-Automatically open the visualization script, which shows four plots:
-
-A side-by-side 3D animation of the Ground Truth vs. Optimized simulation.
-
-A plot of position error for each node over time.
-
-A bar chart of the final position error for each node.
-
-A 3D scatter plot of the final error mapped onto the object's geometry.
-
-📁 File Structure
-
+```
 .
-├── optimize_material_time_series.py    # MAIN SCRIPT: Runs the full pipeline
-├── plots_optimization.py               # VISUALIZER: Called by the main script
+├── optimize_material_time_series.py   # MAIN: Full optimization pipeline
+├── plots_optimization.py               # VISUALIZER: Animations & analysis
+│
 ├── nodes_ref.npy                       # (Generated) Rest positions of the mesh
 ├── tets.npy                            # (Generated) Element connectivity
-├── u_target_series.npy                 # (Generated) "Ground truth" displacement history
-├── u_series_opt.npy                    # (Generated) Optimized displacement history
-└── optimized_params.txt                # (Generated) Final E_opt and nu_opt values
+├── u_target_series.npy                 # (Generated) "Ground truth" displacements
+├── u_series_opt.npy                    # (Generated) Optimized displacements
+└── optimized_params.txt                # (Generated) Final (E_opt, ν_opt)
+```
+
+---
+
+### 🧠 Author Notes
+
+This repository shows how **symbolic computation**, **automatic differentiation**, and **non-linear FEM** can combine into a compact yet powerful workflow for solving complex **inverse problems in mechanics**.
+
+---
+
+### 🧩 Keywords
+
+`Finite Element Method (FEM)` • `CasADi` • `IPOPT` • `Automatic Differentiation` • `Inverse Problems` • `Material Parameter Identification`
+
+---
+
+⭐ If you find this useful, please consider **starring the repository** to support further development!
+
