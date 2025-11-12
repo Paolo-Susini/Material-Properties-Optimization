@@ -1,14 +1,22 @@
 Dynamic FEM Material Parameter Identification with CasADi
 
+<p align="center">
+<img alt="Python" src="https://www.google.com/search?q=https://img.shields.io/badge/Python-3.9%252B-blue%3Flogo%3Dpython%26logoColor%3Dwhite">
+<img alt="CasADi" src="https://www.google.com/search?q=https://img.shields.io/badge/CasADi-yellow%3Flogo%3Dcasadi%26logoColor%3Dblack">
+<img alt="IPOPT" src="https://www.google.com/search?q=https://img.shields.io/badge/IPOPT-brightgreen%3Flogo%3Dipopt%26logoColor%3Dblack">
+<img alt="NumPy" src="https://www.google.com/search?q=https://img.shields.io/badge/NumPy-white%3Flogo%3Dnumpy%26logoColor%3Dblue">
+<img alt="Matplotlib" src="https://www.google.com/search?q=https://img.shields.io/badge/Matplotlib-grey%3Flogo%3Dmatplotlib%26logoColor%3Dwhite">
+</p>
+
 This project performs dynamic parameter identification for a 3D deformable object. It uses CasADi to build a complete, non-linear Finite Element (FEM) simulation symbolically, then uses gradient-based optimization to find the material properties (Young's Modulus $E$ and Poisson's Ratio $\nu$) that best match a target motion.
 
-This is an "inverse problem" where we find the causes (material properties) from the effects (motion).
+This is an inverse problem where we find the causes (material properties) from the effects (motion).
 
-Demo
+🎥 Demo
 
 Pro-Tip: The visualization script plots_optimization.py shows a Matplotlib animation. To create a GIF like the one below, add ani.save('animation.gif', writer='pillow') (you may need pip install pillow) before plt.show().
 
-Core Concepts
+🎯 Core Concepts
 
 This repository demonstrates a powerful combination of techniques:
 
@@ -22,23 +30,23 @@ Automatic Differentiation (AD): By building the simulation symbolically, we get 
 
 Gradient-Based Optimization: The high-performance solver IPOPT is used to solve this non-linear program (NLP), finding the optimal $E$ and $\nu$ that minimize the error.
 
-The Pipeline
+🚀 The Pipeline
 
 The main script optimize_material_time_series.py executes a full, end-to-end pipeline:
 
-Generate Ground Truth: A numerical (NumPy) simulation is run with known "true" properties (E_true, $\nu_true). The resulting displacement history is saved as u_target_series.npy`.
+Generate Ground Truth: A numerical (NumPy) simulation is run with known "true" properties ($E_{true}$, $\nu_{true}$). The resulting displacement history is saved as u_target_series.npy.
 
 Build Symbolic Model: A second, identical simulation is built using CasADi's symbolic variables (ca.SX). The material properties $E$ and $\nu$ are left as free symbolic variables.
 
 Define Objective Function: The script defines a cost function J as the sum of squared differences between the symbolic simulation's output and the "ground truth" data at each timestep.
 
-Optimize: CasADi and IPOPT work together to solve the optimization problem minimize J(E, nu). This step finds the optimal E_opt and $\nu_opt` that make the simulation best match the target.
+Optimize: CasADi and IPOPT work together to solve the optimization problem minimize J(E, nu). This step finds the optimal $E_{opt}$ and $\nu_{opt}$ that make the simulation best match the target.
 
-Generate Optimized Trajectory: A final numerical (NumPy) simulation is run using the found E_opt and $\nu_opt. Its history is saved as u_series_opt.npy`.
+Generate Optimized Trajectory: A final numerical (NumPy) simulation is run using the found $E_{opt}$ and $\nu_{opt}$. Its history is saved as u_series_opt.npy.
 
 Visualize: The script saves all necessary .npy files and automatically calls Paolo_Sofa/Paolo_codes/plots_optimization.py to launch the final visualization and analysis.
 
-Requirements
+⚙️ Requirements
 
 The project requires the following Python libraries. You can install them using pip:
 
@@ -53,7 +61,7 @@ matplotlib for all plotting and animation.
 
 scipy (while not used in this specific script, it's a standard part of this ecosystem).
 
-How to Run
+📈 How to Run
 
 No special setup is required. Just run the main optimization script:
 
@@ -80,13 +88,11 @@ A bar chart of the final position error for each node.
 
 A 3D scatter plot of the final error mapped onto the object's geometry.
 
-File Structure
+📁 File Structure
 
 .
 ├── optimize_material_time_series.py    # MAIN SCRIPT: Runs the full pipeline
-├── Paolo_Sofa/Paolo_codes/
-│   └── plots_optimization.py           # VISUALIZER: Called by the main script
-│
+├── plots_optimization.py               # VISUALIZER: Called by the main script
 ├── nodes_ref.npy                       # (Generated) Rest positions of the mesh
 ├── tets.npy                            # (Generated) Element connectivity
 ├── u_target_series.npy                 # (Generated) "Ground truth" displacement history
