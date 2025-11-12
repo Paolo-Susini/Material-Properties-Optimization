@@ -64,17 +64,16 @@ The main script `optimize_material_time_series.py` executes the full workflow:
 
 3. **Define Objective Function**
    Builds cost function
-   $$
-   J = \sum_t ||u_{\text{sim}}(t) - u_{\text{target}}(t)||^2
-   $$
+   
+   $$J = \sum_t ||u_{\text{sim}}(t) - u_{\text{target}}(t)||^2$$
 
-4. **Optimize**
+5. **Optimize**
    Solves `minimize J(E, ν)` using CasADi + IPOPT to find $(E_{opt}, \nu_{opt})$.
 
-5. **Generate Optimized Trajectory**
+6. **Generate Optimized Trajectory**
    Runs a final simulation using $(E_{opt}, \nu_{opt})$ and saves `u_series_opt.npy`.
 
-6. **Visualize Results**
+7. **Visualize Results**
    Calls `plots_optimization.py` to display and compare the results interactively.
 
 ---
