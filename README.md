@@ -58,6 +58,7 @@ This lets you:
 * Unrolls time steps symbolically using CasADi
 * Computes internal/external forces at each step
 * Provides symbolic objective:
+
   $$
   J(E,\nu) = \tfrac12 \sum_t |u_t^{sim}(E,\nu) - u_t^{target}|^2
   $$
