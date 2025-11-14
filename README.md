@@ -1,152 +1,323 @@
-### 📄 **`README.md`**
+# 📘 Material Parameter Identification via FEM + CasADi Optimization
 
-# 🧠 Dynamic FEM Material Parameter Identification with CasADi
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white" alt="Python Badge">
-  <img src="https://img.shields.io/badge/CasADi-yellow?logo=casadi&logoColor=black" alt="CasADi Badge">
-  <img src="https://img.shields.io/badge/IPOPT-brightgreen?logo=ipopt&logoColor=black" alt="IPOPT Badge">
-  <img src="https://img.shields.io/badge/NumPy-white?logo=numpy&logoColor=blue" alt="NumPy Badge">
-  <img src="https://img.shields.io/badge/Matplotlib-grey?logo=matplotlib&logoColor=white" alt="Matplotlib Badge">
-</p>
+*A modular framework for dynamic FEM simulation, symbolic differentiation, and IPOPT-based material calibration.*
 
 ---
 
-### 🧩 Overview
+## 🚀 Overview
 
-This project performs **dynamic material parameter identification** for a 3D deformable object using **CasADi**.  
-It constructs a **non-linear Finite Element Method (FEM)** simulation symbolically, then applies **gradient-based optimization** to identify material properties — **Young’s Modulus** ($E$) and **Poisson’s Ratio** ($\nu$) — that best match a target motion.
+This repository provides a full pipeline for:
 
-> 🧮 In essence: this is an **inverse problem**, identifying the causes (material properties) from observed effects (motion).
+* **Finite Element simulation** of deformable objects
+* **Symbolic differentiation** of the full dynamic model (via **CasADi**)
+* **Nonlinear optimization** of material parameters (Young’s modulus **E** and Poisson ratio **ν**)
+* **Trajectory-based material calibration** to match a target deformation sequence
 
----
+This enables a **new strategy** for calibrating elastic materials:
 
-### 🎥 Demo
+> Tune FEM material parameters so a simulated object behaves like a reference object —
+> either another FEM simulator, a physics engine, or real-world measured motion.
 
-You can visualize the optimization with `plots_optimization.py`.  
-To export an animation as a GIF, simply add this before `plt.show()`:
+This lets you:
 
-```python
-ani.save("animation.gif", writer="pillow")
-````
-
-> If needed, install Pillow:
->
-> ```bash
-> pip install pillow
-> ```
-<p align="center">
-  <img src="cube_animation.gif" alt="Dynamic FEM Cube Animation" width="500"/>
-</p>
----
-
-### 🎯 Core Concepts
-
-| Concept                            | Description                                                                                           |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **Non-Linear FEM**                 | Uses an *updated-Lagrangian* approach, recomputing element stiffness matrices $K_e$ at each timestep. |
-| **Parameter Identification**       | Solves an inverse problem to identify $(E, \nu)$ from observed motion data.                           |
-| **CasADi Symbolic Graph**          | Builds the entire simulation as a single symbolic expression $J(E,\nu)$.                              |
-| **Automatic Differentiation (AD)** | CasADi provides efficient gradients via reverse-mode AD (“adjoint method”).                           |
-| **Gradient-Based Optimization**    | The non-linear program is solved by **IPOPT** to find optimal material parameters.                    |
+* Match simulation models across engines
+* Fit physical materials from recorded motion data
+* Validate differentiable simulators
+* Perform inverse elasticity estimation
+* Build data-driven soft robotics models
 
 ---
 
-### 🚀 Pipeline Overview
-
-The main script `optimize_material_time_series.py` executes the full workflow:
-
-1. **Generate Ground Truth**
-   Runs a numerical FEM simulation with known $(E_{true}, \nu_{true})$, saving `u_target_series.npy`.
-
-2. **Build Symbolic Model**
-   Recreates the same simulation in CasADi (`ca.SX`), leaving $E$, $\nu$ as symbolic variables.
-
-3. **Define Objective Function**
-   Builds cost function
-   
-   $$J = \sum_t ||u_{\text{sim}}(t) - u_{\text{target}}(t)||^2$$
-
-5. **Optimize**
-   Solves `minimize J(E, ν)` using CasADi + IPOPT to find $(E_{opt}, \nu_{opt})$.
-
-6. **Generate Optimized Trajectory**
-   Runs a final simulation using $(E_{opt}, \nu_{opt})$ and saves `u_series_opt.npy`.
-
-7. **Visualize Results**
-   Calls `plots_optimization.py` to display and compare the results interactively.
-
----
-
-### ⚙️ Requirements
-
-Install dependencies:
-
-```bash
-pip install numpy casadi matplotlib scipy
-```
-
-| Library        | Purpose                                                       |
-| -------------- | ------------------------------------------------------------- |
-| **numpy**      | Numerical computations                                        |
-| **casadi**     | Symbolic modeling, automatic differentiation, IPOPT interface |
-| **matplotlib** | Visualization and animations                                  |
-| **scipy**      | Optional numerical utilities                                  |
-
----
-
-### 📈 How to Run
-
-Simply run:
-
-```bash
-python optimize_material_time_series.py
-```
-
-This command will:
-
-* ✅ Generate the ground truth dataset
-* 🔍 Run full parameter optimization
-* 🧾 Print true vs. identified parameters
-* 💾 Save all `.npy` and `.txt` results
-* 🎨 Launch the visualizer
-
-**The visualizer displays:**
-
-* Side-by-side 3D animation (Ground Truth vs. Optimized)
-* Position error per node over time
-* Final error bar chart
-* 3D scatter of error distribution on the object
-
----
-
-### 📁 Project Structure
+# 📂 Repository Structure
 
 ```
 .
-├── optimize_material_time_series.py   # MAIN: Full optimization pipeline
-├── plots_optimization.py               # VISUALIZER: Animations & analysis
-│
-├── nodes_ref.npy                       # (Generated) Rest positions of the mesh
-├── tets.npy                            # (Generated) Element connectivity
-├── u_target_series.npy                 # (Generated) "Ground truth" displacements
-├── u_series_opt.npy                    # (Generated) Optimized displacements
-└── optimized_params.txt                # (Generated) Final (E_opt, ν_opt)
+├── optimize_material_modular.py     # Main FEM + optimizer module
+├── plots_optimization.py            # Plotting & visualization tools
+├── fem_comparison_animation.mp4     # Example animation of results
+├── README.md                        # This file
+└── data/                            # (optional) target trajectories, etc.
 ```
 
 ---
 
-### 🧠 Author Notes
+# 🔧 Core Components
 
-This repository shows how **symbolic computation**, **automatic differentiation**, and **non-linear FEM** can combine into a compact yet powerful workflow for solving complex **inverse problems in mechanics**.
+## 1️⃣ FEMModel
+
+* Tetrahedral mesh
+* Linear elasticity
+* Computes element stiffness matrices
+* Computes volumes, masses, B‐matrices
+* Assembles global matrices (K, M, C)
+* Applies boundary constraints
+
+## 2️⃣ FEMSimulator
+
+* Runs a **dynamic FEM simulation**
+* Unrolls time steps symbolically using CasADi
+* Computes internal/external forces at each step
+* Provides symbolic objective:
+  $$
+  J(E,\nu) = \tfrac12 \sum_t |u_t^{sim}(E,\nu) - u_t^{target}|^2
+  $$
+
+## 3️⃣ MaterialOptimizer ⭐ **Main optimizer (recommended)**
+
+Runs IPOPT **once** on the full nonlinear program:
+
+* Uses reparameterizations:
+
+  * $E = \exp(\log E)$
+  * $\nu = 0.1\tanh(t_\nu) + 0.4$
+* Ensures stable variables during optimization
+* Returns optimal material parameters
+
+## 4️⃣ MaterialOptimizer_Verbose 🐞 **Debugging version**
+
+* IPOPT runs in *one-iteration increments*
+* Prints detailed logs:
+
+  * Objective value per iteration
+  * Gradients
+  * Parameter evolution
+  * Convergence diagnostics
+* Useful for diagnosing:
+
+  * vanishing/exploding gradients
+  * long trajectory horizon
+  * ill-conditioning
 
 ---
 
-### 🧩 Keywords
+# 🧠 Theory
 
-`Finite Element Method (FEM)` • `CasADi` • `IPOPT` • `Automatic Differentiation` • `Inverse Problems` • `Material Parameter Identification`
+## Dynamic FEM model
+
+The governing equation solved at each timestep:
+
+$$
+M\ddot{u} + C\dot{u} + Ku = f_{\text{ext}}
+$$
+
+Integrated using:
+
+$$
+\dot{u}_{t+1} = \dot{u}_t + \Delta t * a_t \\
+u_{t+1} = u_t + \Delta t * \dot{u}_{t+1}
+$$
 
 ---
 
-⭐ If you find this useful, please consider **starring the repository** to support further development!
+## Objective function
 
+Given target displacements $u_t^*$,
+
+$$
+J(E,\nu) = \frac{1}{2} \sum_{t=0}^{T} |u_t(E,\nu) - u_t^*|^2
+$$
+
+---
+
+## Material reparameterization
+
+Ensures valid domains and stable optimization:
+
+```
+E  = exp(logE)
+nu = 0.1 * tanh(t_nu) + 0.4
+```
+
+Thus:
+
+* $E > 0$
+* $\nu \in (0.3, 0.5)$
+---
+
+## CasADi + IPOPT
+
+* Entire simulation graph is symbolic
+* CasADi provides exact gradients/Hessians
+* IPOPT solves the nonlinear program
+* Convergence detected by KKT satisfaction
+
+---
+
+# ▶️ Running the Optimization
+
+## Example script
+
+```python
+from optimize_material_modular import FEMModel, FEMSimulator, MaterialOptimizer
+import numpy as np
+
+# Load mesh + target trajectory
+nodes = np.load("nodes.npy")
+tets = np.load("tets.npy")
+target_us = np.load("target_us.npy")
+
+model = FEMModel(nodes, tets)
+sim   = FEMSimulator(model, dt=1e-3, n_steps=len(target_us))
+
+opt = MaterialOptimizer(sim, target_us)
+
+E_opt, nu_opt = opt.solve(E_guess=5e4, nu_guess=0.45)
+
+print("Optimal E:", E_opt)
+print("Optimal ν:", nu_opt)
+```
+
+---
+
+# 📊 Plotting Results
+
+The script `plots_optimization.py` provides convenience functions for:
+
+### ✔ Objective history
+
+### ✔ Parameter trajectories (E, ν)
+
+### ✔ Final vs. target deformation comparison
+
+### ✔ 3D node trajectories
+
+### ✔ Per-node displacement errors
+---
+It expects to find in the directory:
+```python
+nodes_ref = np.load("nodes_ref.npy")
+u_target_series = np.load("u_target_series.npy")
+u_series_opt = np.load("u_series_opt.npy")
+tets = np.load("tets.npy")
+F_ext_series = np.load("F_ext_series.npy")
+```
+
+# 🎞 Animation
+
+This repository includes an example animation that compares:
+
+* the **target FEM trajectory**
+* the **optimized FEM trajectory**
+
+Embed inside README:
+
+## 📹 FEM Comparison Animation
+
+*(Actual animation included in repo)*
+
+![Animation](fem_comparison_animation.mp4)
+
+---
+
+# 🧪 Full Workflow
+
+### 1. Generate or load target trajectories
+
+From simulation, real data, motion capture, etc.
+
+### 2. Run optimization
+
+Choose optimizer type:
+
+* `MaterialOptimizer` → fast, production use
+* `MaterialOptimizer_Verbose` → debug mode
+
+### 3. Save results
+
+Both optimizers save:
+
+* optimized parameters
+* simulated trajectories
+* intermediate files
+* error curves
+
+### 4. Plot and animate
+
+Call functions in `plots_optimization.py`.
+
+---
+
+# ⚠️ Troubleshooting
+
+### 🟥 Problem: IPOPT converges but J is large
+
+Likely cause: **vanishing gradients** in long time horizons.
+
+**Fixes:**
+
+* Subsample timesteps
+* Increase damping
+* Use `MaterialOptimizer_Verbose`
+* Use shorter “windows” of simulation
+* Normalize objective by number of time steps
+
+---
+
+### 🟥 Problem: Convergence fails for long trajectories
+
+Reason: Jacobian product through many timesteps becomes ill-conditioned.
+
+**Fixes:**
+
+* multiple-shooting optimization
+* windowed optimization
+* adjoint-based backward integration (coming soon)
+* reduce timestep count
+* regularize J
+
+---
+
+### 🟥 Problem: Memory usage is high
+
+CasADi graphs grow with number of time steps.
+
+**Fixes:**
+
+* reduce `n_steps`
+* enable CasADi JIT compilation
+* run in verbose mode to see memory growth
+
+---
+
+# 🧭 Use Cases
+
+### ✔ material calibration from real deformation data
+
+### ✔ matching two FEM simulators (cross-engine calibration)
+
+### ✔ validating differentiable physics models
+
+### ✔ learning soft-robotics material behavior
+
+### ✔ fitting constitutive parameters for biological tissues
+
+---
+
+# 🤝 Contributing
+
+PRs are welcome, especially for:
+
+* new materials (Neo-Hookean, corotated, etc.)
+* adjoint-based gradients
+* GPU acceleration (planned)
+* improved plotting/animation
+* integration with PyTorch or JAX
+
+---
+
+# 📜 License
+
+*(Choose one and update this section.)*
+
+---
+
+# 🎉 Final Notes
+
+This framework is meant to be:
+
+* research-grade
+* explainable
+* modular
+* extendable
+* educational
+* practical for real calibration tasks
